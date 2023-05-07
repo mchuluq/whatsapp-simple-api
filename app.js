@@ -25,7 +25,7 @@ const io = socketIO(server);
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(fileUpload({
-    debug : true
+    debug : process.env.DEBUG
 }));
 
 const client = new Client({
