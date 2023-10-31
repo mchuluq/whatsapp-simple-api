@@ -31,6 +31,7 @@ app.use(fileUpload({
 const client = new Client({
     puppeteer : {
         headless: true,
+        executablePath: '/usr/bin/google-chrome',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -55,13 +56,34 @@ client.on('message', msg => {
 
 client.initialize();
 
-app.get('/',(req,res) => {
+function authentication(req, res, next) {
+    const authheader = req.headers.authorization;
+    console.log(req.headers);
+ 
+    if (!authheader) {
+        res.setHeader('WWW-Authenticate', 'Basic');
+        return res.status(401).json({"message":"You are not autheticated"});
+    }
+ 
+    const auth = new Buffer.from(authheader.split(' ')[1],'base64').toString().split(':');
+    const user = auth[0];
+    const pass = auth[1];
+ 
+    if (user == process.env.BASIC_AUTH_USERNAME && pass == process.env.BASIC_AUTH_PASSWORD) {
+        next();
+    } else {
+        res.setHeader('WWW-Authenticate', 'Basic');
+        return res.status(401).json({"message":"You are not autheticated"});
+    }
+ 
+}
+
+app.get('/',authentication,(req,res) => {
     return res.sendFile('static/index.html',{root : __dirname})
 });
 
 io.on('connection',function(socket){
     socket.emit('message','Connecting... to '+process.env.APP_NAME);
-
     client.on('qr',(qr) => {
         console.log("QR received", qr);
         qrcode.toDataURL(qr,(err,url) => {
@@ -69,15 +91,15 @@ io.on('connection',function(socket){
             socket.emit('message','QR code received, scan please');
         })
     });
-
     client.on('ready',() => {
         socket.emit('message','whatsapp is ready');
         socket.emit('ready','whatsapp is ready');
+        console.log("whatsapp is ready");
     });
-
-    client.on('authenticated',(session) => {
+    client.on('authenticated',() => {
         socket.emit('authenticated','whatsapp is authenticated');
         socket.emit('message','whatsapp is authenticated');
+        console.log("whatsapp is authenticated");
     });
 })
 
