@@ -18,6 +18,9 @@
                         <div class="card-header">whatsapp API gateway</div>
                         <img src="" alt="QR code" id="qrcode" class="card-image" onerror="this.style.display='none'">
                         <ul class="logs list-group list-group-flush"></ul>
+                        <div class="card-footer text-end" id="card-footer">
+                            <button id="logout-button" type="button" class="btn btn-danger">Log out</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -36,12 +39,18 @@
             socket.on('qr',function(src){
                 $("#qrcode").attr('src',src);
                 $("#qrcode").show();
+                $("#card-footer").hide();
             })
             
             socket.on('ready',function(src){
                 $("#qrcode").attr('src',null);
                 $("#qrcode").hide();
+                $("#card-footer").show();
             })
+
+            $("#logout-button").click(function(){
+                socket.emit("logout-whatsapp");
+            });
         })
     </script>
 </body>

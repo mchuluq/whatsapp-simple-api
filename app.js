@@ -11,7 +11,7 @@ dotenv.config();
 const {body, validationResult} = require('express-validator');
 const {phoneNumberFormatter} = require('./helpers/formatter');
 const {imageTypeValidator,fileSizeValidator} = require('./helpers/validator');
-const AUTH = require('./helpers/auth');
+const auth = require('./helpers/auth');
 
 const checkRegisteredNumber = async function(number){
     const isRegistered = await client.isRegisteredUser(number);
@@ -56,29 +56,7 @@ client.on('message', msg => {
 
 client.initialize();
 
-function authentication(req, res, next) {
-    const authheader = req.headers.authorization;
-    console.log(req.headers);
- 
-    if (!authheader) {
-        res.setHeader('WWW-Authenticate', 'Basic');
-        return res.status(401).json({"message":"You are not autheticated"});
-    }
- 
-    const auth = new Buffer.from(authheader.split(' ')[1],'base64').toString().split(':');
-    const user = auth[0];
-    const pass = auth[1];
- 
-    if (user == process.env.BASIC_AUTH_USERNAME && pass == process.env.BASIC_AUTH_PASSWORD) {
-        next();
-    } else {
-        res.setHeader('WWW-Authenticate', 'Basic');
-        return res.status(401).json({"message":"You are not autheticated"});
-    }
- 
-}
-
-app.get('/',authentication,(req,res) => {
+app.get('/',auth.authentication,(req,res) => {
     return res.sendFile('static/index.html',{root : __dirname})
 });
 
@@ -103,7 +81,7 @@ io.on('connection',function(socket){
     });
 })
 
-app.post('/send-message',AUTH.authenticateKey, [
+app.post('/send-message',auth.authentication, [
     body("number").notEmpty(),
     body("message").notEmpty(),
 ], async (req,res) => {
@@ -143,7 +121,7 @@ app.post('/send-message',AUTH.authenticateKey, [
     });
 })
 
-app.post('/send-media',AUTH.authenticateKey, [
+app.post('/send-media',auth.authentication, [
     body("number").notEmpty(),
     body("caption").notEmpty(),
 ], async (req,res) => {
